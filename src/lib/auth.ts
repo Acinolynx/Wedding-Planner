@@ -3,6 +3,10 @@ import GoogleProvider from "next-auth/providers/google"
 
 const ALLOWED_EMAIL = process.env.ALLOWED_EMAIL
 
+if (!ALLOWED_EMAIL && process.env.NODE_ENV === "production") {
+  throw new Error("ALLOWED_EMAIL environment variable is required in production")
+}
+
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
