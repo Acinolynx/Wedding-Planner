@@ -1,20 +1,5 @@
-import { getSheetData, updateRow, SHEET_NAMES } from '@/lib/sheets'
+import { getSheetData, updateRow, SHEET_NAMES, parseGuestRow } from '@/lib/sheets'
 import type { Guest, RSVPStatus } from '@/types'
-
-function parseGuestRow(row: string[], index: number): Guest {
-  return {
-    id: row[0] || String(index),
-    nama: row[1] || '',
-    telepon: row[2] || undefined,
-    email: row[3] || undefined,
-    undangan_dikirim: row[4] === 'TRUE' || row[4] === 'true',
-    rsvp_status: (row[5] as RSVPStatus) || 'pending',
-    jumlah_hadir: Number(row[6]) || 0,
-    pilihan_makan: row[7] || undefined,
-    nomor_meja: row[8] ? Number(row[8]) : undefined,
-    catatan: row[9] || undefined,
-  }
-}
 
 export async function GET(req: Request): Promise<Response> {
   try {

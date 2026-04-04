@@ -1,6 +1,6 @@
 import { google } from 'googleapis'
 import { GoogleAuth } from 'google-auth-library'
-import type { WeddingConfig, SeatingTable, MoodboardNote } from '@/types'
+import type { WeddingConfig, SeatingTable, MoodboardNote, Guest, RSVPStatus, ChecklistItem, TaskStatus, Priority } from '@/types'
 
 function getAuth(): GoogleAuth {
   const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL
@@ -283,7 +283,14 @@ export async function initSeatingSheet(): Promise<void> {
         ],
       },
     })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    if (!message.includes('already exists')) {
+      throw new Error(`Failed to initialize seating sheet: ${message}`)
+    }
+  }
 
+  try {
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
       range: `${SHEET_NAMES.SEATING}!A1:C1`,
@@ -292,7 +299,7 @@ export async function initSeatingSheet(): Promise<void> {
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
-    throw new Error(`Failed to initialize seating sheet: ${message}`)
+    throw new Error(`Failed to initialize seating sheet headers: ${message}`)
   }
 }
 
@@ -382,7 +389,14 @@ export async function initMoodboardSheet(): Promise<void> {
         ],
       },
     })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    if (!message.includes('already exists')) {
+      throw new Error(`Failed to initialize moodboard sheet: ${message}`)
+    }
+  }
 
+  try {
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
       range: `${SHEET_NAMES.MOODBOARD}!A1:F1`,
@@ -391,6 +405,62 @@ export async function initMoodboardSheet(): Promise<void> {
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
-    throw new Error(`Failed to initialize moodboard sheet: ${message}`)
+    throw new Error(`Failed to initialize moodboard sheet headers: ${message}`)
   }
+}
+
+export function parseGuestRow(row: string[], index: number): Guest {
+  return {
+    id: row[0] || String(index),
+    nama: row[1] || '',
+    telepon: row[2] || undefined,
+    email: row[3] || undefined,
+    undangan_dikirim: row[4] === 'TRUE' || row[4] === 'true',
+    rsvp_status: (row[5] as RSVPStatus) || 'pending',
+    jumlah_hadir: Number(row[6]) || 0,
+    pilihan_makan: row[7] || undefined,
+    nomor_meja: row[8] ? Number(row[8]) : undefined,
+    catatan: row[9] || undefined,
+  }
+}
+
+export function guestToRow(guest: Guest): string[] {
+  return [
+    guest.id,
+    guest.nama,
+    guest.telepon || '',
+    guest.email || '',
+    String(guest.undangan_dikirim),
+    guest.rsvp_status,
+    String(guest.jumlah_hadir),
+    guest.pilihan_makan || '',
+    guest.nomor_meja ? String(guest.nomor_meja) : '',
+    guest.catatan || '',
+  ]
+}
+
+export function parseChecklistRow(row: string[], index: number): ChecklistItem {
+  return {
+    id: row[0] || String(index),
+    task: row[1] || '',
+    kategori: row[2] || '',
+    due_date: row[3] || undefined,
+    assignee: row[4] || undefined,
+    status: (row[5] as TaskStatus) || 'todo',
+    prioritas: (row[6] as Priority) || 'medium',
+    catatan: row[7] || undefined,
+  }
+}
+
+export function checklistToRow(item: ChecklistItem): string[] {
+  return [
+    item.id,
+    item.task,
+    item.kategori,
+    item.due_date || '',
+    item.assignee || '',
+    item.status,
+    item.prioritas,
+    item.catatan || '',
+  ]
 }

@@ -1,11 +1,8 @@
 import { getSheetData, SHEET_NAMES, getConfig } from "@/lib/sheets"
+import { getIndonesianDate, formatRupiah } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Users, Wallet, CheckSquare, Calendar, TrendingUp } from "lucide-react"
-
-function formatRupiah(amount: number): string {
-  return `Rp ${amount.toLocaleString("id-ID")}`
-}
 
 function getDaysUntil(dateStr: string): number {
   const target = new Date(dateStr)
@@ -14,16 +11,6 @@ function getDaysUntil(dateStr: string): number {
   target.setHours(0, 0, 0, 0)
   const diff = target.getTime() - now.getTime()
   return Math.ceil(diff / (1000 * 60 * 60 * 24))
-}
-
-function getIndonesianDate(dateStr: string): string {
-  const date = new Date(dateStr)
-  const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"]
-  const months = [
-    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-    "Juli", "Agustus", "September", "Oktober", "November", "Desember",
-  ]
-  return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`
 }
 
 export default async function DashboardPage() {

@@ -202,6 +202,7 @@ export default function SeatingPage() {
   const [activeId, setActiveId] = useState<string | number | null>(null)
   const [search, setSearch] = useState("")
   const [initError, setInitError] = useState<string | null>(null)
+  const [pendingTable, setPendingTable] = useState<{ guestId: string; tableNumber: number | undefined } | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -290,8 +291,13 @@ export default function SeatingPage() {
       const guestsOnTable = confirmedGuests.filter(
         (g) => g.nomor_meja === deleteTableNumber
       )
-      for (const guest of guestsOnTable) {
-        await updateGuestTable(guest.id, undefined)
+      const results = await Promise.allSettled(
+        guestsOnTable.map((g) => updateGuestTable(g.id, undefined))
+      )
+      const allSucceeded = results.every((r) => r.status === "fulfilled")
+      if (!allSucceeded) {
+        alert("Beberapa tamu gagal dipindahkan. Coba lagi.")
+        return
       }
       const res = await fetch(`/api/sheets/seating?rowIndex=${deleteTableIndex}`, {
         method: "DELETE",
@@ -363,7 +369,7 @@ export default function SeatingPage() {
       })
       if (!res.ok) throw new Error("Failed to update guest")
       const json = await res.json()
-      setGuests(json.guests)
+      setGuests((prev) => prev.map((g) => g.id === guestId ? json.guest : g))
     } catch {
       alert("Gagal memperbarui tamu")
     }
@@ -382,19 +388,21 @@ export default function SeatingPage() {
     if (!guest) return
 
     if (over.id === "unassigned") {
-      if (guest.nomor_meja !== undefined) {
-        updateGuestTable(guestId, undefined)
-      }
+      setPendingTable({ guestId, tableNumber: undefined })
       return
     }
 
     const tableNumber = Number(over.id)
-    if (!isNaN(tableNumber) && guest.nomor_meja !== tableNumber) {
-      updateGuestTable(guestId, tableNumber)
+    if (!isNaN(tableNumber)) {
+      setPendingTable({ guestId, tableNumber })
     }
   }
 
   function handleDragEnd() {
+    if (pendingTable) {
+      updateGuestTable(pendingTable.guestId, pendingTable.tableNumber)
+      setPendingTable(null)
+    }
     setActiveId(null)
   }
 

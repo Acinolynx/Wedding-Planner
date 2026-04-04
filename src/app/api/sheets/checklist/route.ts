@@ -1,32 +1,6 @@
-import { getSheetData, appendRow, updateRow, deleteRow, SHEET_NAMES } from '@/lib/sheets'
-import type { ChecklistItem, TaskStatus, Priority } from '@/types'
+import { getSheetData, appendRow, updateRow, deleteRow, SHEET_NAMES, parseChecklistRow, checklistToRow } from '@/lib/sheets'
+import type { ChecklistItem } from '@/types'
 import { randomUUID } from 'crypto'
-
-function parseChecklistRow(row: string[], index: number): ChecklistItem {
-  return {
-    id: row[0] || String(index),
-    task: row[1] || '',
-    kategori: row[2] || '',
-    due_date: row[3] || undefined,
-    assignee: row[4] || undefined,
-    status: (row[5] as TaskStatus) || 'todo',
-    prioritas: (row[6] as Priority) || 'medium',
-    catatan: row[7] || undefined,
-  }
-}
-
-function checklistToRow(item: ChecklistItem): string[] {
-  return [
-    item.id,
-    item.task,
-    item.kategori,
-    item.due_date || '',
-    item.assignee || '',
-    item.status,
-    item.prioritas,
-    item.catatan || '',
-  ]
-}
 
 export async function GET(): Promise<Response> {
   try {

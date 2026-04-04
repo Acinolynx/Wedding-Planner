@@ -1,29 +1,7 @@
-import { getSheetData, SHEET_NAMES, getConfig } from '@/lib/sheets'
-import type { ChecklistItem, TaskStatus, Priority } from '@/types'
+import { getSheetData, SHEET_NAMES, getConfig, parseChecklistRow } from '@/lib/sheets'
+import { getIndonesianDate } from '@/lib/utils'
+import type { Priority } from '@/types'
 import { Resend } from 'resend'
-
-function parseChecklistRow(row: string[], index: number): ChecklistItem {
-  return {
-    id: row[0] || String(index),
-    task: row[1] || '',
-    kategori: row[2] || '',
-    due_date: row[3] || undefined,
-    assignee: row[4] || undefined,
-    status: (row[5] as TaskStatus) || 'todo',
-    prioritas: (row[6] as Priority) || 'medium',
-    catatan: row[7] || undefined,
-  }
-}
-
-function getIndonesianDate(dateStr: string): string {
-  const date = new Date(dateStr)
-  const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
-  const months = [
-    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
-  ]
-  return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`
-}
 
 const priorityLabel: Record<Priority, string> = {
   high: 'TINGGI',
