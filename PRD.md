@@ -1,8 +1,26 @@
 # PRD — Wedding Planner Web App
 
 **Version:** 1.0  
-**Status:** Planning  
+**Status:** In Development  
 **Scale:** Personal / Family  
+
+---
+
+## Current Status (Updated: 2026-04-03)
+
+### ✅ Completed
+- **Phase 1** — Setup (Next.js, Tailwind, shadcn/ui, Google Sheets, NextAuth)
+- **Phase 2** — Core Features (Dashboard, Guests, Budget, Checklist)
+- **Phase 3** — Secondary Features (Vendor Manager, Excel Export, Email Reminders, Settings/Config)
+- **Phase 4** — Digital RSVP Form, Seating Arrangement, Moodboard / Notes, UI/UX Polish
+
+### 🔄 Remaining
+- All v1 features complete — ready for deployment and real-world testing
+
+### Notes
+- Cron timezone: 09:00 WIB (02:00 UTC)
+- Export Excel: wired up on all 4 pages, exports filtered data
+- RSVP: public page at `/rsvp`, share link button in guests table
 
 ---
 

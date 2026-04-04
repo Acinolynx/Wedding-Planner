@@ -39,13 +39,18 @@ src/
 │   │   ├── guests/page.tsx       # Guest list
 │   │   ├── budget/page.tsx       # Budget tracker
 │   │   ├── checklist/page.tsx    # Checklist & timeline
-│   │   └── vendors/page.tsx      # Vendor manager
+│   │   ├── vendors/page.tsx      # Vendor manager
+│   │   ├── seating/page.tsx      # Seating arrangement (drag-and-drop)
+│   │   ├── moodboard/page.tsx    # Moodboard & notes (image URL + categories)
+│   │   └── settings/page.tsx     # Wedding config / settings
 │   └── api/
 │       ├── auth/[...nextauth]/   # NextAuth
 │       └── sheets/               # Google Sheets API routes
 │           ├── guests/route.ts
 │           ├── budget/route.ts
 │           ├── vendors/route.ts
+│           ├── seating/route.ts
+│           ├── moodboard/route.ts
 │           └── checklist/route.ts
 ├── components/
 │   ├── ui/                       # shadcn/ui components (auto-generated)
@@ -119,6 +124,32 @@ interface ChecklistItem {
   catatan?: string
 }
 
+interface SeatingTable {
+  nomor_meja: number      // table number (unique identifier)
+  nama_meja: string       // table name (e.g., "Meja 1", "VIP")
+  kapasitas: number       // max guests per table
+}
+
+type MoodboardCategory =
+  | 'dekorasi'
+  | 'busana'
+  | 'fotografi'
+  | 'venue'
+  | 'bunga'
+  | 'kue'
+  | 'undangan'
+  | 'warna'
+  | 'lainnya'
+
+interface MoodboardNote {
+  id: string
+  judul: string
+  kategori: MoodboardCategory
+  gambar_url?: string     // image URL (pasted from external source)
+  catatan: string
+  tanggal_dibuat: string  // ISO date
+}
+
 interface WeddingConfig {
   tanggal_pernikahan: string  // ISO date
   nama_pengantin_1: string
@@ -133,7 +164,7 @@ interface WeddingConfig {
 
 ## Google Sheets Convention
 
-- One spreadsheet, 5 tabs: `Tamu`, `Budget`, `Vendor`, `Checklist`, `Config`
+- One spreadsheet, 7 tabs: `Tamu`, `Budget`, `Vendor`, `Checklist`, `Config`, `Tata Letak`, `Moodboard`
 - Row 1 of each tab = header row (column names exactly matching type keys)
 - All API logic lives in `src/lib/sheets.ts`
 - All monetary values are stored as plain numbers (IDR, no formatting)
@@ -213,7 +244,9 @@ NEXTAUTH_URL=http://localhost:3000
 
 ## Current Phase
 
-> **Phase 2 — Setup**  
+> **Phase 4 — Polish & Nice-to-Have**  
+> Completed: Digital RSVP Form, Settings/Config, Email Reminders, Excel Export, Seating Arrangement, Moodboard/Notes, UI/UX Polish (dark mode, mobile, login branding)  
+> All v1 features complete.  
 > See `PRD.md` Section 7 (Roadmap) for full phase breakdown.
 
 When I ask you to implement a feature, check `PRD.md` for the full spec before writing code.
