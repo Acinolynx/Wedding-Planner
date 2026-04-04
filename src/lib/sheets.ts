@@ -71,12 +71,8 @@ export async function getSheetData(sheetName: string): Promise<string[][]> {
 
     // Skip header row (index 0)
     return rows.slice(1)
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error'
-    if (message.toLowerCase().includes('not found') || message.toLowerCase().includes('unable to read range')) {
-      return []
-    }
-    throw new Error(`Failed to fetch sheet ${sheetName}: ${message}`)
+  } catch {
+    return []
   }
 }
 
@@ -171,9 +167,8 @@ export async function getConfig(): Promise<WeddingConfig | null> {
       total_budget: Number(row[4]) || 0,
       target_tamu: Number(row[5]) || 0,
     }
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error'
-    throw new Error(`Failed to fetch config: ${message}`)
+  } catch {
+    return null
   }
 }
 
@@ -213,22 +208,14 @@ export async function updateConfig(config: WeddingConfig): Promise<void> {
 const SEATING_HEADERS = ['nomor_meja', 'nama_meja', 'kapasitas']
 
 export async function getSeatingTables(): Promise<SeatingTable[]> {
-  try {
-    const rows = await getSheetData(SHEET_NAMES.SEATING)
-    return rows
-      .filter((row) => row.length >= 3 && row[0])
-      .map((row) => ({
-        nomor_meja: Number(row[0]) || 0,
-        nama_meja: row[1] || '',
-        kapasitas: Number(row[2]) || 0,
-      }))
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('not found')) {
-      return []
-    }
-    const message = error instanceof Error ? error.message : 'Unknown error'
-    throw new Error(`Failed to fetch seating tables: ${message}`)
-  }
+  const rows = await getSheetData(SHEET_NAMES.SEATING)
+  return rows
+    .filter((row) => row.length >= 3 && row[0])
+    .map((row) => ({
+      nomor_meja: Number(row[0]) || 0,
+      nama_meja: row[1] || '',
+      kapasitas: Number(row[2]) || 0,
+    }))
 }
 
 export async function addSeatingTable(table: SeatingTable): Promise<void> {
@@ -309,25 +296,17 @@ export async function initSeatingSheet(): Promise<void> {
 const MOODBOARD_HEADERS = ['id', 'judul', 'kategori', 'gambar_url', 'catatan', 'tanggal_dibuat']
 
 export async function getMoodboardNotes(): Promise<MoodboardNote[]> {
-  try {
-    const rows = await getSheetData(SHEET_NAMES.MOODBOARD)
-    return rows
-      .filter((row) => row.length >= 6 && row[0])
-      .map((row) => ({
-        id: row[0],
-        judul: row[1] || '',
-        kategori: (row[2] || 'lainnya') as MoodboardNote['kategori'],
-        gambar_url: row[3] || undefined,
-        catatan: row[4] || '',
-        tanggal_dibuat: row[5] || '',
-      }))
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('not found')) {
-      return []
-    }
-    const message = error instanceof Error ? error.message : 'Unknown error'
-    throw new Error(`Failed to fetch moodboard notes: ${message}`)
-  }
+  const rows = await getSheetData(SHEET_NAMES.MOODBOARD)
+  return rows
+    .filter((row) => row.length >= 6 && row[0])
+    .map((row) => ({
+      id: row[0],
+      judul: row[1] || '',
+      kategori: (row[2] || 'lainnya') as MoodboardNote['kategori'],
+      gambar_url: row[3] || undefined,
+      catatan: row[4] || '',
+      tanggal_dibuat: row[5] || '',
+    }))
 }
 
 export async function addMoodboardNote(note: Omit<MoodboardNote, 'tanggal_dibuat'>): Promise<void> {

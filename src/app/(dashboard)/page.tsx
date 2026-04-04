@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Users, Wallet, CheckSquare, Calendar, TrendingUp } from "lucide-react"
 
+export const dynamic = "force-dynamic"
+
 function getDaysUntil(dateStr: string): number {
   const target = new Date(dateStr)
   const now = new Date()
