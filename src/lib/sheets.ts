@@ -73,6 +73,9 @@ export async function getSheetData(sheetName: string): Promise<string[][]> {
     return rows.slice(1)
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
+    if (message.toLowerCase().includes('not found') || message.toLowerCase().includes('unable to read range')) {
+      return []
+    }
     throw new Error(`Failed to fetch sheet ${sheetName}: ${message}`)
   }
 }
