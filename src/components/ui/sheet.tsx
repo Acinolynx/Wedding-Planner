@@ -54,7 +54,7 @@ function SheetContent({
   return (
     <div
       className={cn(
-        "fixed top-0 z-50 h-full bg-background shadow-lg transition-transform duration-300 ease-in-out",
+        "fixed -top-2 z-50 h-full bg-background shadow-lg transition-transform duration-300 ease-in-out",
         side === "right" ? "right-0" : "left-0",
         "w-full max-w-md",
         open ? "translate-x-0" : side === "right" ? "translate-x-full" : "-translate-x-full",
