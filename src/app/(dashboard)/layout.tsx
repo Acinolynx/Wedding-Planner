@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { ThemeToggle } from "@/components/theme-toggle"
 import {
   LayoutDashboard,
   Users,
@@ -16,6 +17,8 @@ import {
   X,
   LogOut,
   Settings,
+  Table,
+  Palette,
 } from "lucide-react"
 
 const navItems = [
@@ -24,6 +27,8 @@ const navItems = [
   { href: "/budget", label: "Budget", icon: Wallet },
   { href: "/checklist", label: "Checklist", icon: CheckSquare },
   { href: "/vendors", label: "Vendor", icon: Briefcase },
+  { href: "/seating", label: "Tata Letak", icon: Table },
+  { href: "/moodboard", label: "Moodboard", icon: Palette },
   { href: "/settings", label: "Pengaturan", icon: Settings },
 ]
 
@@ -64,9 +69,10 @@ export default function DashboardLayout({
           })}
         </nav>
         <div className="border-t p-4">
+          <ThemeToggle />
           <Button
             variant="ghost"
-            className="w-full justify-start gap-3 text-muted-foreground"
+            className="mt-1 w-full justify-start gap-3 text-muted-foreground"
             onClick={() => signOut({ callbackUrl: "/login" })}
           >
             <LogOut className="size-4" />
@@ -119,9 +125,10 @@ export default function DashboardLayout({
           })}
         </nav>
         <div className="border-t p-4">
+          <ThemeToggle />
           <Button
             variant="ghost"
-            className="w-full justify-start gap-3 text-muted-foreground"
+            className="mt-1 w-full justify-start gap-3 text-muted-foreground"
             onClick={() => signOut({ callbackUrl: "/login" })}
           >
             <LogOut className="size-4" />
@@ -133,11 +140,14 @@ export default function DashboardLayout({
       {/* Main content */}
       <div className="flex flex-1 flex-col md:pl-64">
         {/* Mobile header */}
-        <header className="flex h-14 items-center gap-4 border-b px-4 md:hidden">
-          <Button variant="ghost" size="icon" onClick={() => setMobileOpen(true)}>
-            <Menu className="size-5" />
-          </Button>
-          <h1 className="text-sm font-semibold">Wedding Planner</h1>
+        <header className="flex h-14 items-center justify-between gap-4 border-b px-4 md:hidden">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={() => setMobileOpen(true)}>
+              <Menu className="size-5" />
+            </Button>
+            <h1 className="text-sm font-semibold">Wedding Planner</h1>
+          </div>
+          <ThemeToggle />
         </header>
         <main className="flex-1 p-4 md:p-6">{children}</main>
       </div>

@@ -1,6 +1,6 @@
 import { google } from 'googleapis'
 import { GoogleAuth } from 'google-auth-library'
-import type { WeddingConfig } from '@/types'
+import type { WeddingConfig, SeatingTable, MoodboardNote } from '@/types'
 
 function getAuth(): GoogleAuth {
   const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL
@@ -37,6 +37,8 @@ export const SHEET_NAMES = {
   VENDORS: 'Vendor',
   CHECKLIST: 'Checklist',
   CONFIG: 'Config',
+  SEATING: 'Tata Letak',
+  MOODBOARD: 'Moodboard',
 } as const
 
 async function getSheetId(sheetName: string): Promise<number> {
@@ -202,5 +204,193 @@ export async function updateConfig(config: WeddingConfig): Promise<void> {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
     throw new Error(`Failed to update config: ${message}`)
+  }
+}
+
+const SEATING_HEADERS = ['nomor_meja', 'nama_meja', 'kapasitas']
+
+export async function getSeatingTables(): Promise<SeatingTable[]> {
+  try {
+    const rows = await getSheetData(SHEET_NAMES.SEATING)
+    return rows
+      .filter((row) => row.length >= 3 && row[0])
+      .map((row) => ({
+        nomor_meja: Number(row[0]) || 0,
+        nama_meja: row[1] || '',
+        kapasitas: Number(row[2]) || 0,
+      }))
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('not found')) {
+      return []
+    }
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    throw new Error(`Failed to fetch seating tables: ${message}`)
+  }
+}
+
+export async function addSeatingTable(table: SeatingTable): Promise<void> {
+  try {
+    await appendRow(SHEET_NAMES.SEATING, [
+      String(table.nomor_meja),
+      table.nama_meja,
+      String(table.kapasitas),
+    ])
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    throw new Error(`Failed to add seating table: ${message}`)
+  }
+}
+
+export async function updateSeatingTable(
+  rowIndex: number,
+  table: SeatingTable
+): Promise<void> {
+  try {
+    await updateRow(SHEET_NAMES.SEATING, rowIndex + 1, [
+      String(table.nomor_meja),
+      table.nama_meja,
+      String(table.kapasitas),
+    ])
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    throw new Error(`Failed to update seating table: ${message}`)
+  }
+}
+
+export async function deleteSeatingTable(rowIndex: number): Promise<void> {
+  try {
+    await deleteRow(SHEET_NAMES.SEATING, rowIndex + 1)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    throw new Error(`Failed to delete seating table: ${message}`)
+  }
+}
+
+export async function initSeatingSheet(): Promise<void> {
+  try {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      requestBody: {
+        requests: [
+          {
+            addSheet: {
+              properties: {
+                title: SHEET_NAMES.SEATING,
+                gridProperties: { rowCount: 100, columnCount: 10 },
+              },
+            },
+          },
+        ],
+      },
+    })
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAMES.SEATING}!A1:C1`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: [SEATING_HEADERS] },
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    throw new Error(`Failed to initialize seating sheet: ${message}`)
+  }
+}
+
+const MOODBOARD_HEADERS = ['id', 'judul', 'kategori', 'gambar_url', 'catatan', 'tanggal_dibuat']
+
+export async function getMoodboardNotes(): Promise<MoodboardNote[]> {
+  try {
+    const rows = await getSheetData(SHEET_NAMES.MOODBOARD)
+    return rows
+      .filter((row) => row.length >= 6 && row[0])
+      .map((row) => ({
+        id: row[0],
+        judul: row[1] || '',
+        kategori: (row[2] || 'lainnya') as MoodboardNote['kategori'],
+        gambar_url: row[3] || undefined,
+        catatan: row[4] || '',
+        tanggal_dibuat: row[5] || '',
+      }))
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('not found')) {
+      return []
+    }
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    throw new Error(`Failed to fetch moodboard notes: ${message}`)
+  }
+}
+
+export async function addMoodboardNote(note: Omit<MoodboardNote, 'tanggal_dibuat'>): Promise<void> {
+  try {
+    const now = new Date().toISOString().split('T')[0]
+    await appendRow(SHEET_NAMES.MOODBOARD, [
+      note.id,
+      note.judul,
+      note.kategori,
+      note.gambar_url || '',
+      note.catatan,
+      now,
+    ])
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    throw new Error(`Failed to add moodboard note: ${message}`)
+  }
+}
+
+export async function updateMoodboardNote(
+  rowIndex: number,
+  note: MoodboardNote
+): Promise<void> {
+  try {
+    await updateRow(SHEET_NAMES.MOODBOARD, rowIndex + 1, [
+      note.id,
+      note.judul,
+      note.kategori,
+      note.gambar_url || '',
+      note.catatan,
+      note.tanggal_dibuat,
+    ])
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    throw new Error(`Failed to update moodboard note: ${message}`)
+  }
+}
+
+export async function deleteMoodboardNote(rowIndex: number): Promise<void> {
+  try {
+    await deleteRow(SHEET_NAMES.MOODBOARD, rowIndex + 1)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    throw new Error(`Failed to delete moodboard note: ${message}`)
+  }
+}
+
+export async function initMoodboardSheet(): Promise<void> {
+  try {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      requestBody: {
+        requests: [
+          {
+            addSheet: {
+              properties: {
+                title: SHEET_NAMES.MOODBOARD,
+                gridProperties: { rowCount: 200, columnCount: 10 },
+              },
+            },
+          },
+        ],
+      },
+    })
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAMES.MOODBOARD}!A1:F1`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: [MOODBOARD_HEADERS] },
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    throw new Error(`Failed to initialize moodboard sheet: ${message}`)
   }
 }

@@ -73,7 +73,7 @@ export default async function DashboardPage() {
       {/* Wedding date countdown */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="flex size-12 items-center justify-center rounded-full bg-primary/10">
               <Calendar className="size-6 text-primary" />
             </div>

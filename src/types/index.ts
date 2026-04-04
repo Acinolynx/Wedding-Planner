@@ -52,6 +52,32 @@ export interface ChecklistItem {
   catatan?: string
 }
 
+export interface SeatingTable {
+  nomor_meja: number
+  nama_meja: string
+  kapasitas: number
+}
+
+export type MoodboardCategory =
+  | 'dekorasi'
+  | 'busana'
+  | 'fotografi'
+  | 'venue'
+  | 'bunga'
+  | 'kue'
+  | 'undangan'
+  | 'warna'
+  | 'lainnya'
+
+export interface MoodboardNote {
+  id: string
+  judul: string
+  kategori: MoodboardCategory
+  gambar_url?: string
+  catatan: string
+  tanggal_dibuat: string
+}
+
 export interface WeddingConfig {
   tanggal_pernikahan: string
   nama_pengantin_1: string

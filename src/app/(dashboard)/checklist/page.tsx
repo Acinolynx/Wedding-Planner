@@ -297,7 +297,7 @@ export default function ChecklistPage() {
                 {doneCount}/{items.length} selesai
               </p>
             </div>
-            <div className="w-48">
+            <div className="max-w-48 w-full sm:w-48">
               <div className="h-3 w-full rounded-full bg-muted">
                 <div
                   className="h-3 rounded-full bg-primary transition-all"

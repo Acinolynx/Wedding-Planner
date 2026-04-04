@@ -37,7 +37,7 @@ import {
   AlertDialogFooter,
 } from "@/components/ui/alert-dialog"
 import type { Guest, RSVPStatus } from "@/types"
-import { Pencil, Trash2, Plus, RotateCcw, Download } from "lucide-react"
+import { Pencil, Trash2, Plus, RotateCcw, Download, Link } from "lucide-react"
 import { exportToExcel } from "@/lib/export"
 
 function getRsvpBadge(status: RSVPStatus) {
@@ -74,6 +74,7 @@ export default function GuestsPage() {
   const [submitting, setSubmitting] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
 
   const fetchGuests = useCallback(async () => {
     try {
@@ -168,6 +169,14 @@ export default function GuestsPage() {
 
   function updateField(field: string, value: string | number | boolean | undefined) {
     setFormData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  function handleCopyRsvpLink(guest: Guest) {
+    const baseUrl = window.location.origin
+    const url = `${baseUrl}/rsvp?id=${guest.id}&name=${encodeURIComponent(guest.nama)}`
+    navigator.clipboard.writeText(url)
+    setCopiedId(guest.id)
+    setTimeout(() => setCopiedId(null), 2000)
   }
 
   function handleExport() {
@@ -322,6 +331,9 @@ export default function GuestsPage() {
                 <TableCell className="text-center">{guest.nomor_meja ?? "-"}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => handleCopyRsvpLink(guest)} title={copiedId === guest.id ? "Link tersalin!" : "Salin link RSVP"}>
+                      <Link className="size-4" />
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => handleEdit(guest)}>
                       <Pencil className="size-4" />
                     </Button>

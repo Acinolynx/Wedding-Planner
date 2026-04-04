@@ -121,7 +121,7 @@ function SheetBody({
   className?: string
 }) {
   return (
-    <div className={cn("flex-1 overflow-y-auto px-6 py-4", className)}>
+    <div className={cn("flex-1 overflow-y-auto px-4 py-4 sm:px-6", className)}>
       {children}
     </div>
   )

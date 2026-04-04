@@ -210,7 +210,7 @@ export default function BudgetPage() {
           <Skeleton className="h-8 w-40" />
           <Skeleton className="h-8 w-28" />
         </div>
-        <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-20" />
           ))}
