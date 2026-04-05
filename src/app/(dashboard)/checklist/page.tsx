@@ -38,6 +38,8 @@ import {
 import type { ChecklistItem, TaskStatus, Priority } from "@/types"
 import { Pencil, Trash2, Plus, RotateCcw, Download } from "lucide-react"
 import { exportToExcel } from "@/lib/export"
+import { toast } from "sonner"
+import { ChecklistCard } from "@/components/app/mobile-cards"
 
 function getStatusBadge(status: TaskStatus) {
   const map: Record<TaskStatus, { label: string; variant: "success" | "warning" | "danger" }> = {
@@ -187,9 +189,10 @@ export default function ChecklistPage() {
     try {
       const res = await fetch(`/api/sheets/checklist?id=${deleteId}`, { method: "DELETE" })
       if (!res.ok) throw new Error("Failed to delete item")
+      toast.success("Task berhasil dihapus")
       await fetchData()
     } catch {
-      alert("Gagal menghapus item")
+      toast.error("Gagal menghapus item")
     }
   }
 
@@ -206,9 +209,10 @@ export default function ChecklistPage() {
       })
       if (!res.ok) throw new Error("Failed to save item")
       setSheetOpen(false)
+      toast.success(editingItem ? "Task berhasil diperbarui" : "Task berhasil ditambahkan")
       await fetchData()
     } catch {
-      alert("Gagal menyimpan item")
+      toast.error("Gagal menyimpan item")
     } finally {
       setSubmitting(false)
     }
@@ -339,7 +343,28 @@ export default function ChecklistPage() {
         </Select>
       </div>
 
-      <Table>
+      {/* Mobile card view */}
+      <div className="space-y-3 md:hidden">
+        {filtered.length === 0 ? (
+          <div className="py-8 text-center text-sm text-muted-foreground">
+            {search || filterStatus !== "all" || filterPrioritas !== "all"
+              ? "Tidak ada task yang cocok dengan filter"
+              : "Belum ada task. Klik \"Tambah Task\" untuk menambah."}
+          </div>
+        ) : (
+          filtered.map((item) => (
+            <ChecklistCard
+              key={item.id}
+              item={item}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          ))
+        )}
+      </div>
+
+      {/* Desktop table view */}
+      <Table className="hidden md:table">
         <TableHeader>
           <TableRow>
             <TableHead>Task</TableHead>

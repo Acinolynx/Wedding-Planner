@@ -8,10 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Skeleton } from "@/components/ui/skeleton"
 import type { WeddingConfig } from "@/types"
 import { RotateCcw, Check } from "lucide-react"
-
-function formatRupiah(amount: number): string {
-  return `Rp ${amount.toLocaleString("id-ID")}`
-}
+import { formatRupiah } from "@/lib/utils"
+import { toast } from "sonner"
 
 const emptyConfig: WeddingConfig = {
   tanggal_pernikahan: "",
@@ -64,7 +62,7 @@ export default function SettingsPage() {
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     } catch {
-      alert("Gagal menyimpan pengaturan")
+      toast.error("Gagal menyimpan pengaturan")
     } finally {
       setSubmitting(false)
     }

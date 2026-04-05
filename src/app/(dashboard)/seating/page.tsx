@@ -34,6 +34,7 @@ import {
   RotateCcw,
   Table,
 } from "lucide-react"
+import { toast } from "sonner"
 import {
   DndContext,
   DragOverlay,
@@ -296,7 +297,7 @@ export default function SeatingPage() {
       )
       const allSucceeded = results.every((r) => r.status === "fulfilled")
       if (!allSucceeded) {
-        alert("Beberapa tamu gagal dipindahkan. Coba lagi.")
+        toast.error("Beberapa tamu gagal dipindahkan. Coba lagi.")
         return
       }
       const res = await fetch(`/api/sheets/seating?rowIndex=${deleteTableIndex}`, {
@@ -304,9 +305,10 @@ export default function SeatingPage() {
       })
       if (!res.ok) throw new Error("Failed to delete table")
       const json = await res.json()
+      toast.success("Meja berhasil dihapus")
       setTables(json.data)
     } catch {
-      alert("Gagal menghapus meja")
+      toast.error("Gagal menghapus meja")
     } finally {
       setDeleteOpen(false)
       setDeleteTableIndex(null)
@@ -338,10 +340,11 @@ export default function SeatingPage() {
       })
       if (!res.ok) throw new Error("Failed to save table")
       const json = await res.json()
+      toast.success(editingTable ? "Meja berhasil diperbarui" : "Meja berhasil ditambahkan")
       setTables(json.data)
       setSheetOpen(false)
     } catch {
-      alert("Gagal menyimpan meja")
+      toast.error("Gagal menyimpan meja")
     } finally {
       setSubmitting(false)
     }
@@ -371,7 +374,7 @@ export default function SeatingPage() {
       const json = await res.json()
       setGuests((prev) => prev.map((g) => g.id === guestId ? json.guest : g))
     } catch {
-      alert("Gagal memperbarui tamu")
+      toast.error("Gagal memperbarui tamu")
     }
   }
 

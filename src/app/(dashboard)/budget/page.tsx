@@ -38,10 +38,9 @@ import {
 import type { BudgetItem, PaymentStatus } from "@/types"
 import { Pencil, Trash2, Plus, RotateCcw, Download } from "lucide-react"
 import { exportToExcel } from "@/lib/export"
-
-function formatRupiah(amount: number): string {
-  return `Rp ${amount.toLocaleString("id-ID")}`
-}
+import { formatRupiah } from "@/lib/utils"
+import { toast } from "sonner"
+import { BudgetCard } from "@/components/app/mobile-cards"
 
 function getStatusBadge(status: PaymentStatus) {
   const map: Record<PaymentStatus, { label: string; variant: "success" | "warning" | "danger" }> = {
@@ -150,9 +149,10 @@ export default function BudgetPage() {
     try {
       const res = await fetch(`/api/sheets/budget?id=${deleteId}`, { method: "DELETE" })
       if (!res.ok) throw new Error("Failed to delete item")
+      toast.success("Item budget berhasil dihapus")
       await fetchItems()
     } catch {
-      alert("Gagal menghapus item")
+      toast.error("Gagal menghapus item")
     }
   }
 
@@ -169,9 +169,10 @@ export default function BudgetPage() {
       })
       if (!res.ok) throw new Error("Failed to save item")
       setSheetOpen(false)
+      toast.success(editingItem ? "Item budget berhasil diperbarui" : "Item budget berhasil ditambahkan")
       await fetchItems()
     } catch {
-      alert("Gagal menyimpan item")
+      toast.error("Gagal menyimpan item")
     } finally {
       setSubmitting(false)
     }
@@ -300,7 +301,28 @@ export default function BudgetPage() {
         </Select>
       </div>
 
-      <Table>
+      {/* Mobile card view */}
+      <div className="space-y-3 md:hidden">
+        {filtered.length === 0 ? (
+          <div className="py-8 text-center text-sm text-muted-foreground">
+            {search || filterKategori !== "all"
+              ? "Tidak ada item yang cocok dengan filter"
+              : "Belum ada item budget. Klik \"Tambah Item\" untuk menambah."}
+          </div>
+        ) : (
+          filtered.map((item) => (
+            <BudgetCard
+              key={item.id}
+              item={item}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          ))
+        )}
+      </div>
+
+      {/* Desktop table view */}
+      <Table className="hidden md:table">
         <TableHeader>
           <TableRow>
             <TableHead>Kategori</TableHead>

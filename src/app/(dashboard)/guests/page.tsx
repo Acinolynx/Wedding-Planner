@@ -37,8 +37,11 @@ import {
   AlertDialogFooter,
 } from "@/components/ui/alert-dialog"
 import type { Guest, RSVPStatus } from "@/types"
-import { Pencil, Trash2, Plus, RotateCcw, Download, Link } from "lucide-react"
+import { Pencil, Trash2, Plus, RotateCcw, Download, QrCode, Copy, Share2 } from "lucide-react"
 import { exportToExcel } from "@/lib/export"
+import { toast } from "sonner"
+import { GuestCard } from "@/components/app/mobile-cards"
+import { QRCodeSVG } from "qrcode.react"
 
 function getRsvpBadge(status: RSVPStatus) {
   const map: Record<RSVPStatus, { label: string; variant: "success" | "warning" | "danger" }> = {
@@ -74,7 +77,7 @@ export default function GuestsPage() {
   const [submitting, setSubmitting] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
-  const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [qrGuest, setQrGuest] = useState<Guest | null>(null)
 
   const fetchGuests = useCallback(async () => {
     try {
@@ -140,9 +143,10 @@ export default function GuestsPage() {
     try {
       const res = await fetch(`/api/sheets/guests?id=${deleteId}`, { method: "DELETE" })
       if (!res.ok) throw new Error("Failed to delete guest")
+      toast.success("Tamu berhasil dihapus")
       await fetchGuests()
     } catch {
-      alert("Gagal menghapus tamu")
+      toast.error("Gagal menghapus tamu")
     }
   }
 
@@ -159,9 +163,10 @@ export default function GuestsPage() {
       })
       if (!res.ok) throw new Error("Failed to save guest")
       setSheetOpen(false)
+      toast.success(editingGuest ? "Tamu berhasil diperbarui" : "Tamu berhasil ditambahkan")
       await fetchGuests()
     } catch {
-      alert("Gagal menyimpan tamu")
+      toast.error("Gagal menyimpan tamu")
     } finally {
       setSubmitting(false)
     }
@@ -172,11 +177,18 @@ export default function GuestsPage() {
   }
 
   function handleCopyRsvpLink(guest: Guest) {
-    const baseUrl = window.location.origin
-    const url = `${baseUrl}/rsvp?id=${guest.id}&name=${encodeURIComponent(guest.nama)}`
+    const url = getRsvpLink(guest)
     navigator.clipboard.writeText(url)
-    setCopiedId(guest.id)
-    setTimeout(() => setCopiedId(null), 2000)
+    toast.success("Link RSVP berhasil disalin")
+  }
+
+  function getRsvpLink(guest: Guest) {
+    const baseUrl = window.location.origin
+    return `${baseUrl}/rsvp?id=${guest.id}&name=${encodeURIComponent(guest.nama)}`
+  }
+
+  function handleShowQR(guest: Guest) {
+    setQrGuest(guest)
   }
 
   function handleExport() {
@@ -301,7 +313,30 @@ export default function GuestsPage() {
         </Select>
       </div>
 
-      <Table>
+      {/* Mobile card view */}
+      <div className="space-y-3 md:hidden">
+        {filtered.length === 0 ? (
+          <div className="py-8 text-center text-sm text-muted-foreground">
+            {search || filterStatus !== "all"
+              ? "Tidak ada tamu yang cocok dengan filter"
+              : "Belum ada tamu. Klik \"Tambah Tamu\" untuk menambah."}
+          </div>
+        ) : (
+          filtered.map((guest) => (
+            <GuestCard
+              key={guest.id}
+              guest={guest}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onCopyLink={handleCopyRsvpLink}
+              onShowQR={handleShowQR}
+            />
+          ))
+        )}
+      </div>
+
+      {/* Desktop table view */}
+      <Table className="hidden md:table">
         <TableHeader>
           <TableRow>
             <TableHead>Nama</TableHead>
@@ -331,8 +366,11 @@ export default function GuestsPage() {
                 <TableCell className="text-center">{guest.nomor_meja ?? "-"}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => handleCopyRsvpLink(guest)} title={copiedId === guest.id ? "Link tersalin!" : "Salin link RSVP"}>
-                      <Link className="size-4" />
+                    <Button variant="ghost" size="icon" onClick={() => handleShowQR(guest)} title="Lihat QR Code">
+                      <QrCode className="size-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleCopyRsvpLink(guest)} title="Salin link RSVP">
+                      <Copy className="size-4" />
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => handleEdit(guest)}>
                       <Pencil className="size-4" />
@@ -468,6 +506,69 @@ export default function GuestsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* QR Code Dialog */}
+      {qrGuest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm rounded-lg bg-background p-6 shadow-xl">
+            <h2 className="text-center text-lg font-semibold">QR Code RSVP</h2>
+            <div className="mt-4 flex flex-col items-center gap-4">
+              <div className="rounded-lg border bg-white p-4">
+                <QRCodeSVG
+                  value={getRsvpLink(qrGuest)}
+                  size={200}
+                  level="M"
+                />
+              </div>
+              <div className="w-full text-center">
+                <p className="text-sm font-medium">{qrGuest.nama}</p>
+                <p className="mt-1 break-all text-xs text-muted-foreground">
+                  {getRsvpLink(qrGuest)}
+                </p>
+              </div>
+              <div className="flex w-full gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    navigator.clipboard.writeText(getRsvpLink(qrGuest))
+                    toast.success("Link berhasil disalin")
+                  }}
+                >
+                  <Copy className="mr-1.5 size-3.5" />
+                  Salin Link
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={async () => {
+                    const url = getRsvpLink(qrGuest)
+                    if (navigator.share) {
+                      try {
+                        await navigator.share({
+                          title: `RSVP Pernikahan - ${qrGuest.nama}`,
+                          url,
+                        })
+                      } catch {
+                        // user cancelled share
+                      }
+                    } else {
+                      navigator.clipboard.writeText(url)
+                      toast.success("Link berhasil disalin")
+                    }
+                  }}
+                >
+                  <Share2 className="mr-1.5 size-3.5" />
+                  Bagikan
+                </Button>
+              </div>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <Button onClick={() => setQrGuest(null)}>Tutup</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -3,6 +3,7 @@ import { getIndonesianDate, formatRupiah } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Users, Wallet, CheckSquare, Calendar, TrendingUp } from "lucide-react"
+import { RsvpChart, BudgetChart } from "@/components/app/dashboard-charts"
 
 export const dynamic = "force-dynamic"
 
@@ -193,6 +194,12 @@ export default async function DashboardPage() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Charts */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <RsvpChart confirmed={confirmed} pending={pending} declined={declined} />
+        <BudgetChart budget={budget} />
       </div>
     </div>
   )

@@ -1,36 +1,6 @@
-import { getSheetData, appendRow, updateRow, deleteRow, SHEET_NAMES } from '@/lib/sheets'
+import { getSheetData, appendRow, updateRow, deleteRow, SHEET_NAMES, parseVendorRow, vendorToRow } from '@/lib/sheets'
 import type { Vendor } from '@/types'
 import { randomUUID } from 'crypto'
-
-function parseVendorRow(row: string[], index: number): Vendor {
-  return {
-    id: row[0] || String(index),
-    nama: row[1] || '',
-    kategori: row[2] || '',
-    kontak: row[3] || undefined,
-    telepon: row[4] || undefined,
-    harga: Number(row[5]) || 0,
-    dp_dibayar: Number(row[6]) || 0,
-    lunas: row[7] === 'TRUE' || row[7] === 'true',
-    tanggal_kontrak: row[8] || undefined,
-    catatan: row[9] || undefined,
-  }
-}
-
-function vendorToRow(vendor: Vendor): string[] {
-  return [
-    vendor.id,
-    vendor.nama,
-    vendor.kategori,
-    vendor.kontak || '',
-    vendor.telepon || '',
-    String(vendor.harga),
-    String(vendor.dp_dibayar),
-    String(vendor.lunas),
-    vendor.tanggal_kontrak || '',
-    vendor.catatan || '',
-  ]
-}
 
 export async function GET(): Promise<Response> {
   try {

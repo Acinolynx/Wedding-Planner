@@ -35,7 +35,10 @@ import {
   RotateCcw,
   ExternalLink,
   Palette,
+  Upload,
+  X,
 } from "lucide-react"
+import { toast } from "sonner"
 
 const CATEGORIES: { value: MoodboardCategory; label: string; color: string }[] = [
   { value: "dekorasi", label: "Dekorasi", color: "bg-blue-500" },
@@ -85,6 +88,9 @@ export default function MoodboardPage() {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [initError, setInitError] = useState<string | null>(null)
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({})
+  const [uploading, setUploading] = useState(false)
+  const [previewFile, setPreviewFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   const fetchNotes = useCallback(async () => {
     try {
@@ -163,9 +169,10 @@ export default function MoodboardPage() {
       })
       if (!res.ok) throw new Error("Failed to delete note")
       const json = await res.json()
+      toast.success("Catatan berhasil dihapus")
       setNotes(json.data)
     } catch {
-      alert("Gagal menghapus catatan")
+      toast.error("Gagal menghapus catatan")
     } finally {
       setDeleteOpen(false)
       setDeleteRowIndex(null)
@@ -189,6 +196,7 @@ export default function MoodboardPage() {
         })
         if (!res.ok) throw new Error("Failed to update note")
         const json = await res.json()
+        toast.success("Catatan berhasil diperbarui")
         setNotes(json.data)
       } else {
         const res = await fetch("/api/sheets/moodboard", {
@@ -201,11 +209,12 @@ export default function MoodboardPage() {
         })
         if (!res.ok) throw new Error("Failed to add note")
         const json = await res.json()
+        toast.success("Catatan berhasil ditambahkan")
         setNotes(json.data)
       }
       setSheetOpen(false)
     } catch {
-      alert("Gagal menyimpan catatan")
+      toast.error("Gagal menyimpan catatan")
     } finally {
       setSubmitting(false)
     }
@@ -213,6 +222,56 @@ export default function MoodboardPage() {
 
   function handleImageError(noteId: string) {
     setImageErrors((prev) => ({ ...prev, [noteId]: true }))
+  }
+
+  function handleFileSelect(file: File) {
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Ukuran file maksimal 5MB")
+      return
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.error("Hanya file gambar yang diizinkan")
+      return
+    }
+    setPreviewFile(file)
+    const url = URL.createObjectURL(file)
+    setPreviewUrl(url)
+    setFormData((prev) => ({ ...prev, gambar_url: "" }))
+  }
+
+  function clearPreview() {
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    setPreviewFile(null)
+    setPreviewUrl(null)
+  }
+
+  async function handleUploadFile() {
+    if (!previewFile) return
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append("file", previewFile)
+      const res = await fetch("/api/upload", { method: "POST", body: fd })
+      if (!res.ok) {
+        const json = await res.json()
+        throw new Error(json.error || "Upload failed")
+      }
+      const json = await res.json()
+      setFormData((prev) => ({ ...prev, gambar_url: json.url }))
+      clearPreview()
+      toast.success("Gambar berhasil diupload")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal mengupload gambar")
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  function handleSheetOpenChange(open: boolean) {
+    setSheetOpen(open)
+    if (!open) {
+      clearPreview()
+    }
   }
 
   if (loading) {
@@ -419,7 +478,7 @@ export default function MoodboardPage() {
         </div>
       )}
 
-      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+      <Sheet open={sheetOpen} onOpenChange={handleSheetOpenChange}>
         <SheetContent side="right" className="sm:max-w-md">
           <SheetHeader>
             <SheetTitle>
@@ -464,20 +523,104 @@ export default function MoodboardPage() {
                 </select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="gambar_url">URL Gambar</Label>
-                <Input
-                  id="gambar_url"
-                  type="url"
-                  value={formData.gambar_url}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, gambar_url: e.target.value }))
-                  }
-                  placeholder="https://contoh.com/gambar.jpg"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Paste URL gambar dari Google Drive, Imgur, atau sumber lainnya
-                </p>
+              <div className="space-y-3">
+                <Label>Gambar</Label>
+
+                {/* File upload area */}
+                {!previewUrl && !formData.gambar_url && (
+                  <label
+                    htmlFor="file-upload"
+                    className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 transition-colors hover:border-muted-foreground/50"
+                  >
+                    <Upload className="mb-2 size-8 text-muted-foreground" />
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Upload gambar
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      JPEG, PNG, WebP, GIF (max 5MB)
+                    </p>
+                    <input
+                      id="file-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) handleFileSelect(file)
+                      }}
+                    />
+                  </label>
+                )}
+
+                {/* Preview */}
+                {previewUrl && (
+                  <div className="relative overflow-hidden rounded-lg border">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className="w-full object-cover"
+                    />
+                    <div className="flex gap-1 p-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="flex-1"
+                        disabled={uploading}
+                        onClick={handleUploadFile}
+                      >
+                        <Upload className="mr-1 size-3.5" />
+                        {uploading ? "Uploading..." : "Upload ke Drive"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="shrink-0"
+                        onClick={clearPreview}
+                      >
+                        <X className="size-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Current image indicator */}
+                {formData.gambar_url && !previewUrl && (
+                  <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-3">
+                    <ExternalLink className="size-4 shrink-0 text-muted-foreground" />
+                    <p className="truncate text-xs text-muted-foreground">
+                      Gambar sudah terpasang
+                    </p>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="ml-auto size-6 shrink-0"
+                      onClick={() =>
+                        setFormData((prev) => ({ ...prev, gambar_url: "" }))
+                      }
+                    >
+                      <X className="size-3.5" />
+                    </Button>
+                  </div>
+                )}
+
+                {/* URL paste fallback */}
+                <div className="space-y-1">
+                  <Input
+                    id="gambar_url"
+                    type="url"
+                    value={formData.gambar_url}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, gambar_url: e.target.value }))
+                    }
+                    placeholder="atau paste URL gambar..."
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Upload file atau paste URL dari Google Drive, Imgur, dll.
+                  </p>
+                </div>
               </div>
 
               <div className="space-y-2">

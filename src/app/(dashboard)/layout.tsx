@@ -19,6 +19,8 @@ import {
   Settings,
   Table,
   Palette,
+  Database,
+  CalendarClock,
 } from "lucide-react"
 
 const navItems = [
@@ -29,6 +31,8 @@ const navItems = [
   { href: "/vendors", label: "Vendor", icon: Briefcase },
   { href: "/seating", label: "Tata Letak", icon: Table },
   { href: "/moodboard", label: "Moodboard", icon: Palette },
+  { href: "/timeline", label: "Timeline", icon: CalendarClock },
+  { href: "/backup", label: "Backup", icon: Database },
   { href: "/settings", label: "Pengaturan", icon: Settings },
 ]
 

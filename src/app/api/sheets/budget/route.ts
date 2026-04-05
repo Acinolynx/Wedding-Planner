@@ -1,34 +1,6 @@
-import { getSheetData, appendRow, updateRow, deleteRow, SHEET_NAMES } from '@/lib/sheets'
-import type { BudgetItem, PaymentStatus } from '@/types'
+import { getSheetData, appendRow, updateRow, deleteRow, SHEET_NAMES, parseBudgetRow, budgetToRow } from '@/lib/sheets'
+import type { BudgetItem } from '@/types'
 import { randomUUID } from 'crypto'
-
-function parseBudgetRow(row: string[], index: number): BudgetItem {
-  return {
-    id: row[0] || String(index),
-    kategori: row[1] || '',
-    item: row[2] || '',
-    estimasi: Number(row[3]) || 0,
-    realisasi: Number(row[4]) || 0,
-    status_bayar: (row[5] as PaymentStatus) || 'belum',
-    vendor: row[6] || undefined,
-    tanggal_bayar: row[7] || undefined,
-    catatan: row[8] || undefined,
-  }
-}
-
-function budgetToRow(item: BudgetItem): string[] {
-  return [
-    item.id,
-    item.kategori,
-    item.item,
-    String(item.estimasi),
-    String(item.realisasi),
-    item.status_bayar,
-    item.vendor || '',
-    item.tanggal_bayar || '',
-    item.catatan || '',
-  ]
-}
 
 export async function GET(): Promise<Response> {
   try {

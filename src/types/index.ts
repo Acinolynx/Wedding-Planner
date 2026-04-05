@@ -87,6 +87,15 @@ export interface WeddingConfig {
   target_tamu: number
 }
 
+export interface TimelineEvent {
+  id: string
+  waktu: string       // HH:MM format
+  judul: string
+  lokasi?: string
+  catatan?: string
+  urutan: number      // display order
+}
+
 export type SheetRow = string[]
 
 export interface ApiResponse<T> {

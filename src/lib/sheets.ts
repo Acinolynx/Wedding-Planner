@@ -1,6 +1,6 @@
 import { google } from 'googleapis'
 import { GoogleAuth } from 'google-auth-library'
-import type { WeddingConfig, SeatingTable, MoodboardNote, Guest, RSVPStatus, ChecklistItem, TaskStatus, Priority } from '@/types'
+import type { WeddingConfig, SeatingTable, MoodboardNote, Guest, RSVPStatus, ChecklistItem, TaskStatus, Priority, BudgetItem, PaymentStatus, Vendor, TimelineEvent } from '@/types'
 
 function getAuth(): GoogleAuth {
   const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL
@@ -39,6 +39,7 @@ export const SHEET_NAMES = {
   CONFIG: 'Config',
   SEATING: 'Tata Letak',
   MOODBOARD: 'Moodboard',
+  TIMELINE: 'Timeline',
 } as const
 
 async function getSheetId(sheetName: string): Promise<number> {
@@ -391,6 +392,64 @@ export async function initMoodboardSheet(): Promise<void> {
   }
 }
 
+export function parseBudgetRow(row: string[], index: number): BudgetItem {
+  return {
+    id: row[0] || String(index),
+    kategori: row[1] || '',
+    item: row[2] || '',
+    estimasi: Number(row[3]) || 0,
+    realisasi: Number(row[4]) || 0,
+    status_bayar: (row[5] as PaymentStatus) || 'belum',
+    vendor: row[6] || undefined,
+    tanggal_bayar: row[7] || undefined,
+    catatan: row[8] || undefined,
+  }
+}
+
+export function budgetToRow(item: BudgetItem): string[] {
+  return [
+    item.id,
+    item.kategori,
+    item.item,
+    String(item.estimasi),
+    String(item.realisasi),
+    item.status_bayar,
+    item.vendor || '',
+    item.tanggal_bayar || '',
+    item.catatan || '',
+  ]
+}
+
+export function parseVendorRow(row: string[], index: number): Vendor {
+  return {
+    id: row[0] || String(index),
+    nama: row[1] || '',
+    kategori: row[2] || '',
+    kontak: row[3] || undefined,
+    telepon: row[4] || undefined,
+    harga: Number(row[5]) || 0,
+    dp_dibayar: Number(row[6]) || 0,
+    lunas: row[7] === 'TRUE' || row[7] === 'true',
+    tanggal_kontrak: row[8] || undefined,
+    catatan: row[9] || undefined,
+  }
+}
+
+export function vendorToRow(vendor: Vendor): string[] {
+  return [
+    vendor.id,
+    vendor.nama,
+    vendor.kategori,
+    vendor.kontak || '',
+    vendor.telepon || '',
+    String(vendor.harga),
+    String(vendor.dp_dibayar),
+    String(vendor.lunas),
+    vendor.tanggal_kontrak || '',
+    vendor.catatan || '',
+  ]
+}
+
 export function parseGuestRow(row: string[], index: number): Guest {
   return {
     id: row[0] || String(index),
@@ -445,4 +504,103 @@ export function checklistToRow(item: ChecklistItem): string[] {
     item.prioritas,
     item.catatan || '',
   ]
+}
+
+const TIMELINE_HEADERS = ['id', 'waktu', 'judul', 'lokasi', 'catatan', 'urutan']
+
+export function parseTimelineRow(row: string[], index: number): TimelineEvent {
+  return {
+    id: row[0] || String(index),
+    waktu: row[1] || '00:00',
+    judul: row[2] || '',
+    lokasi: row[3] || undefined,
+    catatan: row[4] || undefined,
+    urutan: Number(row[5]) || 0,
+  }
+}
+
+export function timelineToRow(event: TimelineEvent): string[] {
+  return [
+    event.id,
+    event.waktu,
+    event.judul,
+    event.lokasi || '',
+    event.catatan || '',
+    String(event.urutan),
+  ]
+}
+
+export async function getTimelineEvents(): Promise<TimelineEvent[]> {
+  const rows = await getSheetData(SHEET_NAMES.TIMELINE)
+  return rows
+    .filter((row) => row.length >= 6 && row[0])
+    .map((row, i) => parseTimelineRow(row, i))
+    .sort((a, b) => a.urutan - b.urutan)
+}
+
+export async function addTimelineEvent(event: TimelineEvent): Promise<void> {
+  try {
+    await appendRow(SHEET_NAMES.TIMELINE, timelineToRow(event))
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    throw new Error(`Failed to add timeline event: ${message}`)
+  }
+}
+
+export async function updateTimelineEvent(
+  rowIndex: number,
+  event: TimelineEvent
+): Promise<void> {
+  try {
+    await updateRow(SHEET_NAMES.TIMELINE, rowIndex + 1, timelineToRow(event))
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    throw new Error(`Failed to update timeline event: ${message}`)
+  }
+}
+
+export async function deleteTimelineEvent(rowIndex: number): Promise<void> {
+  try {
+    await deleteRow(SHEET_NAMES.TIMELINE, rowIndex + 1)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    throw new Error(`Failed to delete timeline event: ${message}`)
+  }
+}
+
+export async function initTimelineSheet(): Promise<void> {
+  try {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      requestBody: {
+        requests: [
+          {
+            addSheet: {
+              properties: {
+                title: SHEET_NAMES.TIMELINE,
+                gridProperties: { rowCount: 50, columnCount: 10 },
+              },
+            },
+          },
+        ],
+      },
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    if (!message.includes('already exists')) {
+      throw new Error(`Failed to initialize timeline sheet: ${message}`)
+    }
+  }
+
+  try {
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAMES.TIMELINE}!A1:F1`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: [TIMELINE_HEADERS] },
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    throw new Error(`Failed to initialize timeline sheet headers: ${message}`)
+  }
 }

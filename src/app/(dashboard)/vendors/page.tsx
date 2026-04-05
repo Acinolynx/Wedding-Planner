@@ -39,10 +39,9 @@ import {
 import type { Vendor } from "@/types"
 import { Pencil, Trash2, Plus, RotateCcw, Download } from "lucide-react"
 import { exportToExcel } from "@/lib/export"
-
-function formatRupiah(amount: number): string {
-  return `Rp ${amount.toLocaleString("id-ID")}`
-}
+import { formatRupiah } from "@/lib/utils"
+import { toast } from "sonner"
+import { VendorCard } from "@/components/app/mobile-cards"
 
 function getLunasBadge(lunas: boolean) {
   return lunas
@@ -151,9 +150,10 @@ export default function VendorsPage() {
     try {
       const res = await fetch(`/api/sheets/vendors?id=${deleteId}`, { method: "DELETE" })
       if (!res.ok) throw new Error("Failed to delete vendor")
+      toast.success("Vendor berhasil dihapus")
       await fetchVendors()
     } catch {
-      alert("Gagal menghapus vendor")
+      toast.error("Gagal menghapus vendor")
     }
   }
 
@@ -170,9 +170,10 @@ export default function VendorsPage() {
       })
       if (!res.ok) throw new Error("Failed to save vendor")
       setSheetOpen(false)
+      toast.success(editingVendor ? "Vendor berhasil diperbarui" : "Vendor berhasil ditambahkan")
       await fetchVendors()
     } catch {
-      alert("Gagal menyimpan vendor")
+      toast.error("Gagal menyimpan vendor")
     } finally {
       setSubmitting(false)
     }
@@ -300,7 +301,28 @@ export default function VendorsPage() {
         </Select>
       </div>
 
-      <Table>
+      {/* Mobile card view */}
+      <div className="space-y-3 md:hidden">
+        {filtered.length === 0 ? (
+          <div className="py-8 text-center text-sm text-muted-foreground">
+            {search || filterKategori !== "all"
+              ? "Tidak ada vendor yang cocok dengan filter"
+              : "Belum ada vendor. Klik \"Tambah Vendor\" untuk menambah."}
+          </div>
+        ) : (
+          filtered.map((vendor) => (
+            <VendorCard
+              key={vendor.id}
+              vendor={vendor}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          ))
+        )}
+      </div>
+
+      {/* Desktop table view */}
+      <Table className="hidden md:table">
         <TableHeader>
           <TableRow>
             <TableHead>Nama</TableHead>
