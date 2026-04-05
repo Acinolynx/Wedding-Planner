@@ -21,7 +21,7 @@ export const authOptions: NextAuthOptions = {
     async signIn({ account, profile }) {
       if (account?.provider === "google" && profile?.email) {
         if (!ALLOWED_EMAIL) return true
-        return ALLOWED_EMAIL.split(",").map((e) => e.trim()).includes(profile.email)
+        return ALLOWED_EMAIL.split(",").map((e) => e.trim().toLowerCase()).includes(profile.email.toLowerCase())
       }
       return false
     },
